@@ -53,7 +53,7 @@ final class UddfParser
         );
     }
 
-    public function parseFile(string $path): Uddf
+    public function parseFile(string $path): UddfGenerator
     {
         if (!is_file($path)) {
             throw new ParseException("File not found: {$path}");
