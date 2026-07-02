@@ -24,7 +24,7 @@ use Kreitje\UddfGenerator\ProfileData\Waypoint;
 
 final class UddfParser
 {
-    public function parse(string $xml): Uddf
+    public function parse(string $xml): UddfGenerator
     {
         $prev = libxml_use_internal_errors(true);
         $doc = new \DOMDocument();
@@ -44,7 +44,7 @@ final class UddfParser
             throw new ParseException('Root element must be <uddf>.');
         }
 
-        return new Uddf(
+        return new UddfGenerator(
             generator: $this->parseGenerator($root),
             diver: $this->parseDiver($root),
             diveSites: $this->parseDiveSites($root),

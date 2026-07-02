@@ -10,7 +10,7 @@ use Kreitje\UddfGenerator\Gas\GasDefinitions;
 use Kreitje\UddfGenerator\Generator\Generator;
 use Kreitje\UddfGenerator\ProfileData\ProfileData;
 
-final class Uddf implements XmlSerializable
+final class UddfGenerator implements XmlSerializable
 {
     public const VERSION = '3.2.3';
 

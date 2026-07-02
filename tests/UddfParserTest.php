@@ -21,7 +21,7 @@ use Kreitje\UddfGenerator\ProfileData\InformationBeforeDive;
 use Kreitje\UddfGenerator\ProfileData\ProfileData;
 use Kreitje\UddfGenerator\ProfileData\RepetitionGroup;
 use Kreitje\UddfGenerator\ProfileData\Waypoint;
-use Kreitje\UddfGenerator\Uddf;
+use Kreitje\UddfGenerator\UddfGenerator;
 use Kreitje\UddfGenerator\UddfParser;
 use PHPUnit\Framework\TestCase;
 
@@ -34,9 +34,9 @@ final class UddfParserTest extends TestCase
         $this->parser = new UddfParser();
     }
 
-    private function buildFullUddf(): Uddf
+    private function buildFullUddf(): UddfGenerator
     {
-        return new Uddf(
+        return new UddfGenerator(
             generator: new Generator(
                 name: 'Test App',
                 version: '2.0.0',

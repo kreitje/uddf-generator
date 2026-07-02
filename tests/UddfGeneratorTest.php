@@ -21,14 +21,14 @@ use Kreitje\UddfGenerator\ProfileData\InformationBeforeDive;
 use Kreitje\UddfGenerator\ProfileData\ProfileData;
 use Kreitje\UddfGenerator\ProfileData\RepetitionGroup;
 use Kreitje\UddfGenerator\ProfileData\Waypoint;
-use Kreitje\UddfGenerator\Uddf;
+use Kreitje\UddfGenerator\UddfGenerator;
 use PHPUnit\Framework\TestCase;
 
-final class UddfTest extends TestCase
+final class UddfGeneratorTest extends TestCase
 {
-    private function buildFullUddf(): Uddf
+    private function buildFullUddf(): UddfGenerator
     {
-        return new Uddf(
+        return new UddfGenerator(
             generator: new Generator(
                 name: 'Test App',
                 version: '1.0.0',
@@ -213,7 +213,7 @@ final class UddfTest extends TestCase
 
     public function testMinimalUddfWithOnlyGenerator(): void
     {
-        $uddf = new Uddf(
+        $uddf = new UddfGenerator(
             generator: new Generator(name: 'MinApp', version: '0.1'),
         );
 
