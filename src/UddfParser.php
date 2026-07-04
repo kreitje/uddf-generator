@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator;
 
+use Kreitje\UddfGenerator\Common\Address;
+use Kreitje\UddfGenerator\Common\Contact;
+use Kreitje\UddfGenerator\Common\Notes;
 use Kreitje\UddfGenerator\Diver\Diver;
 use Kreitje\UddfGenerator\Diver\Equipment;
 use Kreitje\UddfGenerator\Diver\Owner;
@@ -44,12 +47,17 @@ final class UddfParser
             throw new ParseException('Root element must be <uddf>.');
         }
 
+        $diveSites = $this->parseDiveSites($root);
+
         return new UddfGenerator(
             generator: $this->parseGenerator($root),
             diver: $this->parseDiver($root),
-            diveSites: $this->parseDiveSites($root),
+            diveSites: $diveSites,
             gasDefinitions: $this->parseGasDefinitions($root),
-            profileData: $this->parseProfileData($root),
+            profileData: $this->parseProfileData($root, array_map(
+                static fn (DiveSite $site): string => $site->id,
+                $diveSites,
+            )),
         );
     }
 
@@ -83,9 +91,8 @@ final class UddfParser
             $manufacturer = new Manufacturer(
                 id: $manufacturerEl->getAttribute('id'),
                 name: $this->require($manufacturerEl, 'name'),
-                address: $this->text($manufacturerEl, 'address'),
-                phone: $this->text($manufacturerEl, 'phone'),
-                email: $this->text($manufacturerEl, 'email'),
+                address: $this->parseAddress($manufacturerEl),
+                contact: $this->parseContact($manufacturerEl),
             );
         }
 
@@ -93,9 +100,9 @@ final class UddfParser
 
         return new Generator(
             name: $this->require($el, 'name'),
-            version: $this->require($el, 'version'),
-            datetime: $datetimeStr !== null ? new \DateTimeImmutable($datetimeStr) : null,
             manufacturer: $manufacturer,
+            version: $this->text($el, 'version'),
+            datetime: $datetimeStr !== null ? new \DateTimeImmutable($datetimeStr) : null,
         );
     }
 
@@ -114,13 +121,16 @@ final class UddfParser
         }
 
         $personalEl = $this->child($ownerEl, 'personal');
-        $birthdateStr = $personalEl !== null ? $this->text($personalEl, 'birthdate') : null;
+
+        if ($personalEl === null) {
+            throw new ParseException('Missing required <personal> element inside <owner>.');
+        }
 
         $personalData = new PersonalData(
-            firstName: $personalEl !== null ? $this->text($personalEl, 'firstname') : null,
-            lastName: $personalEl !== null ? $this->text($personalEl, 'lastname') : null,
-            birthdate: $birthdateStr !== null ? new \DateTimeImmutable($birthdateStr) : null,
-            sex: $personalEl !== null ? $this->text($personalEl, 'sex') : null,
+            firstName: $this->require($personalEl, 'firstname'),
+            lastName: $this->require($personalEl, 'lastname'),
+            birthdate: $this->parseEncapsulatedDateTime($personalEl, 'birthdate'),
+            sex: $this->text($personalEl, 'sex'),
         );
 
         $equipmentEl = $this->child($ownerEl, 'equipment');
@@ -132,8 +142,7 @@ final class UddfParser
                 $tanks[] = new Tank(
                     id: $tankEl->getAttribute('id'),
                     name: $this->require($tankEl, 'name'),
-                    volume: $this->float($tankEl, 'volume'),
-                    workpressure: $this->float($tankEl, 'workpressure'),
+                    volume: $this->float($tankEl, 'tankvolume'),
                 );
             }
             $equipment = new Equipment(tanks: $tanks);
@@ -165,10 +174,10 @@ final class UddfParser
 
             if ($geoEl !== null) {
                 $geography = new Geography(
-                    location: $this->text($geoEl, 'location'),
+                    location: $this->require($geoEl, 'location'),
+                    address: $this->parseAddress($geoEl),
                     latitude: $this->float($geoEl, 'latitude'),
                     longitude: $this->float($geoEl, 'longitude'),
-                    country: $this->text($geoEl, 'country'),
                 );
             }
 
@@ -176,7 +185,7 @@ final class UddfParser
                 id: $siteEl->getAttribute('id'),
                 name: $this->require($siteEl, 'name'),
                 geography: $geography,
-                notes: $this->text($siteEl, 'notes'),
+                notes: $this->parseNotes($siteEl),
             );
         }
 
@@ -210,7 +219,8 @@ final class UddfParser
         return new GasDefinitions(mixes: $mixes);
     }
 
-    private function parseProfileData(\DOMElement $root): ?ProfileData
+    /** @param string[] $knownDiveSiteIds */
+    private function parseProfileData(\DOMElement $root, array $knownDiveSiteIds): ?ProfileData
     {
         $el = $this->child($root, 'profiledata');
 
@@ -224,7 +234,7 @@ final class UddfParser
             $dives = [];
 
             foreach ($this->children($groupEl, 'dive') as $diveEl) {
-                $dives[] = $this->parseDive($diveEl);
+                $dives[] = $this->parseDive($diveEl, $knownDiveSiteIds);
             }
 
             if ($dives !== []) {
@@ -242,7 +252,8 @@ final class UddfParser
         return new ProfileData(repetitionGroups: $groups);
     }
 
-    private function parseDive(\DOMElement $diveEl): Dive
+    /** @param string[] $knownDiveSiteIds */
+    private function parseDive(\DOMElement $diveEl, array $knownDiveSiteIds): Dive
     {
         $id = $diveEl->getAttribute('id');
         $beforeEl = $this->child($diveEl, 'informationbeforedive');
@@ -251,13 +262,10 @@ final class UddfParser
             throw new ParseException("Missing <informationbeforedive> in <dive id=\"{$id}\">.");
         }
 
-        $linkEl = $this->child($beforeEl, 'link');
-
         $informationBefore = new InformationBeforeDive(
             datetime: new \DateTimeImmutable($this->require($beforeEl, 'datetime')),
             diveNumber: $this->int($beforeEl, 'divenumber'),
-            diveSiteRef: ($linkEl?->getAttribute('ref') ?: null),
-            notes: $this->text($beforeEl, 'notes'),
+            diveSiteRef: $this->findDiveSiteLinkRef($beforeEl, $knownDiveSiteIds),
         );
 
         $samplesEl = $this->child($diveEl, 'samples');
@@ -265,14 +273,14 @@ final class UddfParser
 
         if ($samplesEl !== null) {
             foreach ($this->children($samplesEl, 'waypoint') as $wpEl) {
-                $mixChangeEl = $this->child($wpEl, 'mixchange');
+                $switchMixEl = $this->child($wpEl, 'switchmix');
 
                 $waypoints[] = new Waypoint(
                     depth: $this->float($wpEl, 'depth') ?? 0.0,
-                    diveTime: $this->int($wpEl, 'divetime') ?? 0,
+                    diveTime: $this->float($wpEl, 'divetime') ?? 0.0,
                     temperature: $this->float($wpEl, 'temperature'),
                     tankPressure: $this->float($wpEl, 'tankpressure'),
-                    mixChangeRef: ($mixChangeEl?->getAttribute('ref') ?: null),
+                    switchMixRef: ($switchMixEl?->getAttribute('ref') ?: null),
                 );
             }
         }
@@ -283,9 +291,9 @@ final class UddfParser
         if ($afterEl !== null) {
             $informationAfter = new InformationAfterDive(
                 greatestDepth: $this->float($afterEl, 'greatestdepth') ?? 0.0,
-                diveDuration: $this->int($afterEl, 'diveduration') ?? 0,
+                diveDuration: $this->float($afterEl, 'diveduration') ?? 0.0,
                 averageDepth: $this->float($afterEl, 'averagedepth'),
-                notes: $this->text($afterEl, 'notes'),
+                notes: $this->parseNotes($afterEl),
             );
         }
 
@@ -295,6 +303,112 @@ final class UddfParser
             samples: $waypoints,
             informationAfterDive: $informationAfter,
         );
+    }
+
+    /**
+     * <informationbeforedive> may contain several <link> elements pointing at
+     * unrelated things (buddy, trip membership, equipment used, the dive
+     * site, ...) — the schema does not distinguish between them structurally.
+     * Prefer a link whose ref matches a known dive site id; if none match and
+     * there is exactly one link, assume it is the dive site reference (this
+     * is always true for documents this library itself generates).
+     *
+     * @param string[] $knownDiveSiteIds
+     */
+    private function findDiveSiteLinkRef(\DOMElement $beforeEl, array $knownDiveSiteIds): ?string
+    {
+        $links = $this->children($beforeEl, 'link');
+
+        foreach ($links as $link) {
+            $ref = $link->getAttribute('ref');
+            if (in_array($ref, $knownDiveSiteIds, true)) {
+                return $ref;
+            }
+        }
+
+        if (count($links) === 1) {
+            return $links[0]->getAttribute('ref') ?: null;
+        }
+
+        return null;
+    }
+
+    private function parseAddress(\DOMElement $parent): ?Address
+    {
+        $el = $this->child($parent, 'address');
+
+        if ($el === null) {
+            return null;
+        }
+
+        return new Address(
+            country: $this->require($el, 'country'),
+            street: $this->text($el, 'street'),
+            city: $this->text($el, 'city'),
+            postcode: $this->text($el, 'postcode'),
+            province: $this->text($el, 'province'),
+        );
+    }
+
+    private function parseContact(\DOMElement $parent): ?Contact
+    {
+        $el = $this->child($parent, 'contact');
+
+        if ($el === null) {
+            return null;
+        }
+
+        return new Contact(
+            languages: $this->texts($el, 'language'),
+            phones: $this->texts($el, 'phone'),
+            mobilePhones: $this->texts($el, 'mobilephone'),
+            faxes: $this->texts($el, 'fax'),
+            emails: $this->texts($el, 'email'),
+            homepages: $this->texts($el, 'homepage'),
+        );
+    }
+
+    private function parseNotes(\DOMElement $parent): ?Notes
+    {
+        $el = $this->child($parent, 'notes');
+
+        if ($el === null) {
+            return null;
+        }
+
+        $paragraphs = [];
+        $linkRefs = [];
+
+        for ($node = $el->firstChild; $node !== null; $node = $node->nextSibling) {
+            if (!$node instanceof \DOMElement) {
+                continue;
+            }
+
+            if ($node->localName === 'para') {
+                $paragraphs[] = trim($node->textContent);
+            } elseif ($node->localName === 'link') {
+                $linkRefs[] = $node->getAttribute('ref');
+            }
+        }
+
+        if ($paragraphs === [] && $linkRefs === []) {
+            return null;
+        }
+
+        return new Notes(paragraphs: $paragraphs, linkRefs: $linkRefs);
+    }
+
+    private function parseEncapsulatedDateTime(\DOMElement $parent, string $localName): ?\DateTimeImmutable
+    {
+        $wrapper = $this->child($parent, $localName);
+
+        if ($wrapper === null) {
+            return null;
+        }
+
+        $value = $this->text($wrapper, 'datetime');
+
+        return $value !== null ? new \DateTimeImmutable($value) : null;
     }
 
     private function child(\DOMElement $parent, string $localName): ?\DOMElement
@@ -322,6 +436,15 @@ final class UddfParser
         return $result;
     }
 
+    /** @return string[] */
+    private function texts(\DOMElement $parent, string $localName): array
+    {
+        return array_map(
+            static fn (\DOMElement $el): string => trim($el->textContent),
+            $this->children($parent, $localName),
+        );
+    }
+
     private function text(\DOMElement $parent, string $localName): ?string
     {
         $el = $this->child($parent, $localName);
@@ -337,13 +460,13 @@ final class UddfParser
 
     private function require(\DOMElement $parent, string $localName): string
     {
-        $value = $this->text($parent, $localName);
+        $el = $this->child($parent, $localName);
 
-        if ($value === null) {
+        if ($el === null) {
             throw new ParseException("Missing required element <{$localName}> inside <{$parent->localName}>.");
         }
 
-        return $value;
+        return trim($el->textContent);
     }
 
     private function float(\DOMElement $parent, string $localName): ?float

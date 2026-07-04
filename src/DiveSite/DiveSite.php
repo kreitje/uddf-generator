@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator\DiveSite;
 
+use Kreitje\UddfGenerator\Common\Notes;
 use Kreitje\UddfGenerator\XmlSerializable;
 
 final class DiveSite implements XmlSerializable
@@ -12,7 +13,7 @@ final class DiveSite implements XmlSerializable
         public readonly string $id,
         public readonly string $name,
         public readonly ?Geography $geography = null,
-        public readonly ?string $notes = null,
+        public readonly ?Notes $notes = null,
     ) {}
 
     public function toXml(\DOMDocument $doc): \DOMElement
@@ -27,7 +28,7 @@ final class DiveSite implements XmlSerializable
         }
 
         if ($this->notes !== null) {
-            $el->appendChild($doc->createElement('notes', $this->notes));
+            $el->appendChild($this->notes->toXml($doc));
         }
 
         return $el;

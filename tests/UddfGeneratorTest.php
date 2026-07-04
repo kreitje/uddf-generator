@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator\Tests;
 
+use Kreitje\UddfGenerator\Common\Address;
+use Kreitje\UddfGenerator\Common\Contact;
 use Kreitje\UddfGenerator\Diver\Diver;
 use Kreitje\UddfGenerator\Diver\Equipment;
 use Kreitje\UddfGenerator\Diver\Owner;
@@ -36,7 +38,7 @@ final class UddfGeneratorTest extends TestCase
                 manufacturer: new Manufacturer(
                     id: 'test_manufacturer',
                     name: 'Test Corp',
-                    email: 'test@example.com',
+                    contact: new Contact(emails: ['test@example.com']),
                 ),
             ),
             diver: new Diver(
@@ -44,7 +46,7 @@ final class UddfGeneratorTest extends TestCase
                     id: 'owner',
                     personalData: new PersonalData(firstName: 'John', lastName: 'Doe'),
                     equipment: new Equipment(tanks: [
-                        new Tank(id: 'tank_1', name: '12L Alu', volume: 12.0, workpressure: 200.0),
+                        new Tank(id: 'tank_1', name: '12L Alu', volume: 12.0),
                     ]),
                 ),
             ),
@@ -54,9 +56,9 @@ final class UddfGeneratorTest extends TestCase
                     name: 'Great Barrier Reef',
                     geography: new Geography(
                         location: 'Queensland, Australia',
+                        address: new Address(country: 'AU'),
                         latitude: -18.2871,
                         longitude: 147.6992,
-                        country: 'AU',
                     ),
                 ),
             ],
@@ -76,7 +78,7 @@ final class UddfGeneratorTest extends TestCase
                                 diveSiteRef: 'site_001',
                             ),
                             samples: [
-                                new Waypoint(depth: 0.0, diveTime: 0, mixChangeRef: 'air'),
+                                new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),
                                 new Waypoint(depth: 10.0, diveTime: 120, temperature: 298.15, tankPressure: 180.0),
                                 new Waypoint(depth: 18.0, diveTime: 300, temperature: 296.15, tankPressure: 160.0),
                                 new Waypoint(depth: 18.0, diveTime: 1500, temperature: 296.15, tankPressure: 80.0),
@@ -194,9 +196,9 @@ final class UddfGeneratorTest extends TestCase
         $this->assertSame('0', $first->getElementsByTagName('depth')->item(0)->textContent);
         $this->assertSame('0', $first->getElementsByTagName('divetime')->item(0)->textContent);
 
-        $mixChange = $first->getElementsByTagName('mixchange')->item(0);
-        $this->assertNotNull($mixChange);
-        $this->assertSame('air', $mixChange->getAttribute('ref'));
+        $switchMix = $first->getElementsByTagName('switchmix')->item(0);
+        $this->assertNotNull($switchMix);
+        $this->assertSame('air', $switchMix->getAttribute('ref'));
     }
 
     public function testInformationAfterDiveIsAutoComputed(): void
@@ -269,6 +271,6 @@ final class UddfGeneratorTest extends TestCase
         );
 
         $this->assertSame(20.0, $info->greatestDepth);
-        $this->assertSame(1200, $info->diveDuration);
+        $this->assertSame(1200.0, $info->diveDuration);
     }
 }

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<uddf xmlns="http://www.streit.cc/uddf/3.2/" version="3.2.0">
+  <generator>
+    <name>Subsurface Divelog</name>
+    <manufacturer id="subsurface">
+      <name>Subsurface Team</name>
+      <contact>
+        <homepage>http://subsurface-divelog.org/</homepage>
+      </contact>
+    </manufacturer>
+    <version>3</version>
+  </generator>
+  <mediadata/>
+  <diver>
+    <owner id="owner">
+      <personal>
+        <firstname/>
+        <lastname/>
+      </personal>
+      <equipment/>
+    </owner>
+    <buddy id="idp105553145083007">
+      <personal>
+        <firstname>Jimbo</firstname>
+      </personal>
+    </buddy>
+  </diver>
+  <divesite>
+    <divebase id="allbase">
+      <name>Subsurface Divebase</name>
+    </divebase>
+    <site id="52ad10b4">
+      <name>Houghten Lake</name>
+      <geography>
+        <location>Houghten Lake</location>
+        <latitude/>
+        <longitude/>
+      </geography>
+    </site>
+  </divesite>
+  <gasdefinitions>
+    <mix id="mix(21/0)">
+      <name>air</name>
+      <o2>0.21</o2>
+      <he>0.00</he>
+    </mix>
+  </gasdefinitions>
+  <profiledata>
+    <repetitiongroup id="idp105553144850559">
+      <dive id="idp105553144850559">
+        <informationbeforedive>
+          <link ref="idp105553145083007"/>
+          <link ref="52ad10b4"/>
+          <divenumber>1</divenumber>
+          <datetime>2026-07-03T14:26:33</datetime>
+          <airtemperature>297.04</airtemperature>
+          <equipmentused>
+            <leadquantity>0</leadquantity>
+          </equipmentused>
+        </informationbeforedive>
+        <tankdata>
+          <link ref="mix(21/0)"/>
+          <tankvolume>0.011094</tankvolume>
+          <tankpressurebegin>20684300</tankpressurebegin>
+          <tankpressureend>3447400</tankpressureend>
+        </tankdata>
+        <samples>
+          <waypoint>
+            <depth>0</depth>
+            <divetime>0</divetime>
+          </waypoint>
+          <waypoint>
+            <depth>15</depth>
+            <divetime>100</divetime>
+          </waypoint>
+          <waypoint>
+            <depth>15</depth>
+            <divetime>2420</divetime>
+          </waypoint>
+          <waypoint>
+            <depth>5</depth>
+            <divetime>2487</divetime>
+          </waypoint>
+          <waypoint>
+            <depth>5</depth>
+            <divetime>2667</divetime>
+          </waypoint>
+          <waypoint>
+            <depth>0</depth>
+            <divetime>2700</divetime>
+          </waypoint>
+        </samples>
+        <informationafterdive>
+          <greatestdepth>15.0</greatestdepth>
+          <averagedepth>13.779</averagedepth>
+          <diveduration>2700</diveduration>
+          <lowesttemperature>294.26</lowesttemperature>
+          <notes>
+            <para>This is just a test.</para>
+          </notes>
+          <rating>
+            <ratingvalue>10</ratingvalue>
+          </rating>
+          <visibility>15</visibility>
+        </informationafterdive>
+      </dive>
+    </repetitiongroup>
+  </profiledata>
+  <divetrip/>
+</uddf>

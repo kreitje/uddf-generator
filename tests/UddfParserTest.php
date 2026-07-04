@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator\Tests;
 
+use Kreitje\UddfGenerator\Common\Address;
+use Kreitje\UddfGenerator\Common\Contact;
+use Kreitje\UddfGenerator\Common\Notes;
 use Kreitje\UddfGenerator\Gas\Mix;
 use Kreitje\UddfGenerator\Generator\Generator;
 use Kreitje\UddfGenerator\Generator\Manufacturer;
@@ -39,15 +42,14 @@ final class UddfParserTest extends TestCase
         return new UddfGenerator(
             generator: new Generator(
                 name: 'Test App',
-                version: '2.0.0',
-                datetime: new \DateTimeImmutable('2024-06-01T08:00:00'),
                 manufacturer: new Manufacturer(
                     id: 'mfr_1',
                     name: 'Acme Diving',
-                    address: '1 Reef St',
-                    phone: '+61400000000',
-                    email: 'dev@acme.test',
+                    address: new Address(country: 'AU', street: '1 Reef St'),
+                    contact: new Contact(phones: ['+61400000000'], emails: ['dev@acme.test']),
                 ),
+                version: '2.0.0',
+                datetime: new \DateTimeImmutable('2024-06-01T08:00:00'),
             ),
             diver: new Diver(
                 owner: new Owner(
@@ -59,7 +61,7 @@ final class UddfParserTest extends TestCase
                         sex: 'female',
                     ),
                     equipment: new Equipment(tanks: [
-                        new Tank(id: 'tank_a', name: 'Alu80', volume: 11.1, workpressure: 207.0),
+                        new Tank(id: 'tank_a', name: 'Alu80', volume: 11.1),
                     ]),
                 ),
             ),
@@ -69,11 +71,11 @@ final class UddfParserTest extends TestCase
                     name: 'Great Barrier Reef',
                     geography: new Geography(
                         location: 'Queensland',
+                        address: new Address(country: 'AU'),
                         latitude: -18.2871,
                         longitude: 147.6992,
-                        country: 'AU',
                     ),
-                    notes: 'UNESCO World Heritage Site',
+                    notes: new Notes(paragraphs: ['UNESCO World Heritage Site']),
                 ),
             ],
             gasDefinitions: new GasDefinitions([
@@ -91,10 +93,9 @@ final class UddfParserTest extends TestCase
                                 datetime: new \DateTimeImmutable('2024-06-01T09:00:00'),
                                 diveNumber: 99,
                                 diveSiteRef: 'site_gbr',
-                                notes: 'Saw a manta ray',
                             ),
                             samples: [
-                                new Waypoint(depth: 0.0, diveTime: 0, mixChangeRef: 'air'),
+                                new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),
                                 new Waypoint(depth: 25.0, diveTime: 180, temperature: 300.15, tankPressure: 190.0),
                                 new Waypoint(depth: 25.0, diveTime: 1500, temperature: 298.15, tankPressure: 70.0),
                                 new Waypoint(depth: 0.0, diveTime: 1800, tankPressure: 50.0),
@@ -124,7 +125,10 @@ final class UddfParserTest extends TestCase
         $this->assertNotNull($mfr);
         $this->assertSame('mfr_1', $mfr->id);
         $this->assertSame('Acme Diving', $mfr->name);
-        $this->assertSame('dev@acme.test', $mfr->email);
+        $this->assertSame('AU', $mfr->address?->country);
+        $this->assertSame('1 Reef St', $mfr->address?->street);
+        $this->assertSame(['+61400000000'], $mfr->contact?->phones);
+        $this->assertSame(['dev@acme.test'], $mfr->contact?->emails);
     }
 
     public function testRoundtripPreservesDiver(): void
@@ -149,7 +153,6 @@ final class UddfParserTest extends TestCase
         $this->assertSame('tank_a', $tanks[0]->id);
         $this->assertSame('Alu80', $tanks[0]->name);
         $this->assertSame(11.1, $tanks[0]->volume);
-        $this->assertSame(207.0, $tanks[0]->workpressure);
     }
 
     public function testRoundtripPreservesDiveSite(): void
@@ -160,14 +163,14 @@ final class UddfParserTest extends TestCase
         $site = $parsed->diveSites[0];
         $this->assertSame('site_gbr', $site->id);
         $this->assertSame('Great Barrier Reef', $site->name);
-        $this->assertSame('UNESCO World Heritage Site', $site->notes);
+        $this->assertSame(['UNESCO World Heritage Site'], $site->notes?->paragraphs);
 
         $geo = $site->geography;
         $this->assertNotNull($geo);
         $this->assertSame('Queensland', $geo->location);
         $this->assertSame(-18.2871, $geo->latitude);
         $this->assertSame(147.6992, $geo->longitude);
-        $this->assertSame('AU', $geo->country);
+        $this->assertSame('AU', $geo->address?->country);
     }
 
     public function testRoundtripPreservesGasDefinitions(): void
@@ -214,7 +217,6 @@ final class UddfParserTest extends TestCase
         $this->assertSame('2024-06-01T09:00:00', $before->datetime->format('Y-m-d\TH:i:s'));
         $this->assertSame(99, $before->diveNumber);
         $this->assertSame('site_gbr', $before->diveSiteRef);
-        $this->assertSame('Saw a manta ray', $before->notes);
     }
 
     public function testRoundtripPreservesWaypoints(): void
@@ -225,18 +227,18 @@ final class UddfParserTest extends TestCase
         $this->assertCount(4, $waypoints);
 
         $this->assertSame(0.0, $waypoints[0]->depth);
-        $this->assertSame(0, $waypoints[0]->diveTime);
-        $this->assertSame('air', $waypoints[0]->mixChangeRef);
+        $this->assertSame(0.0, $waypoints[0]->diveTime);
+        $this->assertSame('air', $waypoints[0]->switchMixRef);
         $this->assertNull($waypoints[0]->temperature);
 
         $this->assertSame(25.0, $waypoints[1]->depth);
-        $this->assertSame(180, $waypoints[1]->diveTime);
+        $this->assertSame(180.0, $waypoints[1]->diveTime);
         $this->assertSame(300.15, $waypoints[1]->temperature);
         $this->assertSame(190.0, $waypoints[1]->tankPressure);
 
         $this->assertSame(0.0, $waypoints[3]->depth);
-        $this->assertSame(1800, $waypoints[3]->diveTime);
-        $this->assertNull($waypoints[3]->mixChangeRef);
+        $this->assertSame(1800.0, $waypoints[3]->diveTime);
+        $this->assertNull($waypoints[3]->switchMixRef);
     }
 
     public function testRoundtripPreservesInformationAfterDive(): void
@@ -246,7 +248,7 @@ final class UddfParserTest extends TestCase
         $after = $parsed->profileData?->repetitionGroups[0]->dives[0]->informationAfterDive;
         $this->assertNotNull($after);
         $this->assertSame(25.0, $after->greatestDepth);
-        $this->assertSame(1800, $after->diveDuration);
+        $this->assertSame(1800.0, $after->diveDuration);
     }
 
     public function testParseMinimalUddf(): void
@@ -269,6 +271,23 @@ final class UddfParserTest extends TestCase
         $this->assertSame([], $uddf->diveSites);
         $this->assertNull($uddf->gasDefinitions);
         $this->assertNull($uddf->profileData);
+    }
+
+    public function testParseUddfWithoutVersion(): void
+    {
+        $xml = <<<XML
+        <?xml version="1.0" encoding="UTF-8"?>
+        <uddf version="3.2.3">
+          <generator>
+            <name>NoVersionApp</name>
+          </generator>
+        </uddf>
+        XML;
+
+        $uddf = $this->parser->parse($xml);
+
+        $this->assertSame('NoVersionApp', $uddf->generator->name);
+        $this->assertNull($uddf->generator->version);
     }
 
     public function testParseUddfWithoutNamespace(): void
@@ -332,6 +351,7 @@ final class UddfParserTest extends TestCase
     {
         $original = $this->buildFullUddf()->generate();
         $parsed = $this->parser->parse($original);
+
         $regenerated = $parsed->generate();
 
         // Both should parse to valid XML with the same structure

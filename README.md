@@ -2,6 +2,8 @@
 
 A PHP library for generating and parsing [UDDF](https://www.streit.cc/resources/UDDF/v3.2.3/en/index.html) (Universal Dive Data Format) XML files. The entire UDDF document is modelled as a tree of typed PHP objects — build the tree, call `generate()`, get valid UDDF 3.2.3 XML.
 
+This is based on the xsd file located here: [https://streit.cc/dive/page2.html](https://streit.cc/dive/page2.html)
+
 ## Requirements
 
 - PHP 8.2+
@@ -33,7 +35,7 @@ $uddf = new UddfGenerator(
                     diveNumber: 42,
                 ),
                 samples: [
-                    new Waypoint(depth: 0.0,  diveTime: 0,    mixChangeRef: 'air'),
+                    new Waypoint(depth: 0.0,  diveTime: 0,    switchMixRef: 'air'),
                     new Waypoint(depth: 18.0, diveTime: 300,  temperature: 296.15, tankPressure: 180.0),
                     new Waypoint(depth: 18.0, diveTime: 1500, temperature: 295.15, tankPressure: 80.0),
                     new Waypoint(depth: 0.0,  diveTime: 1800, tankPressure: 50.0),
@@ -68,22 +70,22 @@ Call `generate()` to get a UTF-8 encoded, pretty-printed XML string conforming t
 
 ### Generator
 
-Identifies the software that produced the file. The `datetime` defaults to now if omitted.
+Identifies the software that produced the file. The `datetime` defaults to now if omitted. `version` is optional per the UDDF schema.
 
 ```php
+use Kreitje\UddfGenerator\Common\{Address, Contact};
 use Kreitje\UddfGenerator\Generator\{Generator, Manufacturer};
 
 new Generator(
     name: 'My App',
-    version: '1.0.0',
-    datetime: new DateTimeImmutable('2024-01-01T12:00:00'), // optional
     manufacturer: new Manufacturer(                          // optional
         id: 'acme',
         name: 'Acme Diving Co.',
-        email: 'support@acme.example',
-        phone: '+61400000000',
-        address: '1 Reef Street, Sydney',
+        address: new Address(country: 'AU', street: '1 Reef Street', city: 'Sydney'),
+        contact: new Contact(emails: ['support@acme.example'], phones: ['+61400000000']),
     ),
+    version: '1.0.0',                                         // optional
+    datetime: new DateTimeImmutable('2024-01-01T12:00:00'),   // optional
 );
 ```
 
@@ -92,6 +94,7 @@ new Generator(
 ### Dive sites
 
 ```php
+use Kreitje\UddfGenerator\Common\{Address, Notes};
 use Kreitje\UddfGenerator\DiveSite\{DiveSite, Geography};
 
 $sites = [
@@ -100,11 +103,11 @@ $sites = [
         name: 'Great Barrier Reef',
         geography: new Geography(
             location: 'Queensland, Australia',
+            address: new Address(country: 'AU'),
             latitude: -18.2871,
             longitude: 147.6992,
-            country: 'AU',
         ),
-        notes: 'UNESCO World Heritage Site',
+        notes: new Notes(paragraphs: ['UNESCO World Heritage Site']),
     ),
 ];
 
@@ -128,13 +131,14 @@ $gases = new GasDefinitions([
 ]);
 ```
 
-The `id` on each mix is used to cross-reference from waypoints via `mixChangeRef`.
+The `id` on each mix is used to cross-reference from waypoints via `switchMixRef`.
 
 ---
 
 ### Dive profiles
 
 ```php
+use Kreitje\UddfGenerator\Common\Notes;
 use Kreitje\UddfGenerator\ProfileData\{
     ProfileData, RepetitionGroup, Dive,
     InformationBeforeDive, InformationAfterDive, Waypoint,
@@ -149,11 +153,10 @@ $profileData = new ProfileData([
                 datetime: new DateTimeImmutable('2024-06-15T09:00:00'),
                 diveNumber: 42,
                 diveSiteRef: 'site_gbr', // references a DiveSite id
-                notes: 'Saw a manta ray',
             ),
             samples: [
                 // depth in metres · diveTime in seconds · temperature in Kelvin · tankPressure in bar
-                new Waypoint(depth: 0.0,  diveTime: 0,    mixChangeRef: 'air'),
+                new Waypoint(depth: 0.0,  diveTime: 0,    switchMixRef: 'air'),
                 new Waypoint(depth: 20.0, diveTime: 300,  temperature: 299.15, tankPressure: 190.0),
                 new Waypoint(depth: 20.0, diveTime: 1500, temperature: 297.15, tankPressure: 70.0),
                 new Waypoint(depth: 5.0,  diveTime: 1740, temperature: 298.15, tankPressure: 55.0),
@@ -177,9 +180,10 @@ new Dive(
     informationBeforeDive: $before,
     samples: $waypoints,
     informationAfterDive: new InformationAfterDive(
-        greatestDepth: 20.0, // metres
-        diveDuration: 1860,  // seconds
-        averageDepth: 12.5,  // metres, optional
+        greatestDepth: 20.0,   // metres
+        diveDuration: 1860.0,  // seconds
+        averageDepth: 12.5,    // metres, optional
+        notes: new Notes(paragraphs: ['Saw a manta ray']), // optional
     ),
 );
 
@@ -204,7 +208,7 @@ $diver = new Diver(
             sex: 'female',
         ),
         equipment: new Equipment(tanks: [
-            new Tank(id: 'tank_1', name: 'Alu80', volume: 11.1, workpressure: 207.0),
+            new Tank(id: 'tank_1', name: 'Alu80', volume: 11.1),
         ]),
     ),
 );
@@ -236,7 +240,7 @@ echo $uddf->profileData?->repetitionGroups[0]->dives[0]->samples[1]->depth;
 $xml = $uddf->generate();
 ```
 
-`ParseException` is thrown for invalid XML, a non-`<uddf>` root element, or missing required child elements (`<name>`, `<version>`).
+`ParseException` is thrown for invalid XML, a non-`<uddf>` root element, or missing required child elements (e.g. `<generator><name>`, `<owner><personal>`, `<personal><firstname>`/`<lastname>`).
 
 ---
 
@@ -253,7 +257,6 @@ $xml = $uddf->generate();
 | `InformationAfterDive::$diveDuration` | Seconds |
 | `Geography::$latitude` / `$longitude` | Decimal degrees |
 | `Tank::$volume` | Litres |
-| `Tank::$workpressure` | Bar |
 
 ---
 
@@ -263,13 +266,17 @@ $xml = $uddf->generate();
 UddfGenerator
 ├── Generator\Generator
 │   └── Generator\Manufacturer
+│       ├── Common\Address
+│       └── Common\Contact
 ├── Diver\Diver
 │   └── Diver\Owner
 │       ├── Diver\PersonalData
 │       └── Diver\Equipment
 │           └── Diver\Tank[]
 ├── DiveSite\DiveSite[]
-│   └── DiveSite\Geography
+│   ├── DiveSite\Geography
+│   │   └── Common\Address
+│   └── Common\Notes
 ├── Gas\GasDefinitions
 │   └── Gas\Mix[]
 └── ProfileData\ProfileData
@@ -278,6 +285,7 @@ UddfGenerator
             ├── ProfileData\InformationBeforeDive
             ├── ProfileData\Waypoint[]
             └── ProfileData\InformationAfterDive
+                └── Common\Notes
 ```
 
 All classes are `final` with `readonly` constructor-promoted properties. Every class implements `XmlSerializable` (`toXml(\DOMDocument): \DOMElement`).

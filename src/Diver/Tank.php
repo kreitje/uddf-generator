@@ -12,7 +12,6 @@ final class Tank implements XmlSerializable
         public readonly string $id,
         public readonly string $name,
         public readonly ?float $volume = null,
-        public readonly ?float $workpressure = null,
     ) {}
 
     public function toXml(\DOMDocument $doc): \DOMElement
@@ -23,11 +22,7 @@ final class Tank implements XmlSerializable
         $el->appendChild($doc->createElement('name', $this->name));
 
         if ($this->volume !== null) {
-            $el->appendChild($doc->createElement('volume', (string) $this->volume));
-        }
-
-        if ($this->workpressure !== null) {
-            $el->appendChild($doc->createElement('workpressure', (string) $this->workpressure));
+            $el->appendChild($doc->createElement('tankvolume', (string) $this->volume));
         }
 
         return $el;

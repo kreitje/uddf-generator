@@ -10,9 +10,9 @@ final class Generator implements XmlSerializable
 {
     public function __construct(
         public readonly string $name,
-        public readonly string $version,
-        public readonly ?\DateTimeImmutable $datetime = null,
         public readonly ?Manufacturer $manufacturer = null,
+        public readonly ?string $version = null,
+        public readonly ?\DateTimeImmutable $datetime = null,
     ) {}
 
     public function toXml(\DOMDocument $doc): \DOMElement
@@ -20,10 +20,13 @@ final class Generator implements XmlSerializable
         $el = $doc->createElement('generator');
 
         $el->appendChild($doc->createElement('name', $this->name));
-        $el->appendChild($doc->createElement('version', $this->version));
 
         if ($this->manufacturer !== null) {
             $el->appendChild($this->manufacturer->toXml($doc));
+        }
+
+        if ($this->version !== null) {
+            $el->appendChild($doc->createElement('version', $this->version));
         }
 
         $datetime = $this->datetime ?? new \DateTimeImmutable();

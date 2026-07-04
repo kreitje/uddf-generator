@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator\Generator;
 
+use Kreitje\UddfGenerator\Common\Address;
+use Kreitje\UddfGenerator\Common\Contact;
 use Kreitje\UddfGenerator\XmlSerializable;
 
 final class Manufacturer implements XmlSerializable
@@ -11,9 +13,8 @@ final class Manufacturer implements XmlSerializable
     public function __construct(
         public readonly string $id,
         public readonly string $name,
-        public readonly ?string $address = null,
-        public readonly ?string $phone = null,
-        public readonly ?string $email = null,
+        public readonly ?Address $address = null,
+        public readonly ?Contact $contact = null,
     ) {}
 
     public function toXml(\DOMDocument $doc): \DOMElement
@@ -24,15 +25,11 @@ final class Manufacturer implements XmlSerializable
         $el->appendChild($doc->createElement('name', $this->name));
 
         if ($this->address !== null) {
-            $el->appendChild($doc->createElement('address', $this->address));
+            $el->appendChild($this->address->toXml($doc));
         }
 
-        if ($this->phone !== null) {
-            $el->appendChild($doc->createElement('phone', $this->phone));
-        }
-
-        if ($this->email !== null) {
-            $el->appendChild($doc->createElement('email', $this->email));
+        if ($this->contact !== null) {
+            $el->appendChild($this->contact->toXml($doc));
         }
 
         return $el;
