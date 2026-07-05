@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator\Gas;
 
+use Kreitje\UddfGenerator\Common\Price;
 use Kreitje\UddfGenerator\XmlSerializable;
 
 final class Mix implements XmlSerializable
@@ -14,7 +15,19 @@ final class Mix implements XmlSerializable
         public readonly float $o2,
         public readonly float $n2,
         public readonly float $he = 0.0,
-    ) {}
+        /** @var string[] */
+        public readonly array $aliasNames = [],
+        public readonly ?float $ar = null,
+        public readonly ?float $h2 = null,
+        public readonly ?Price $pricePerLitre = null,
+        public readonly ?float $maximumPo2 = null,
+        public readonly ?float $maximumOperationDepth = null,
+        public readonly ?float $equivalentAirDepth = null,
+    ) {
+        if ($this->maximumPo2 !== null && $this->maximumOperationDepth !== null) {
+            throw new \InvalidArgumentException('A mix cannot have both maximumPo2 and maximumOperationDepth.');
+        }
+    }
 
     public static function air(string $id = 'air'): self
     {
@@ -51,9 +64,36 @@ final class Mix implements XmlSerializable
         $el->setAttribute('id', $this->id);
 
         $el->appendChild($doc->createElement('name', $this->name));
+
+        foreach ($this->aliasNames as $aliasName) {
+            $el->appendChild($doc->createElement('aliasname', $aliasName));
+        }
+
         $el->appendChild($doc->createElement('o2', (string) $this->o2));
         $el->appendChild($doc->createElement('n2', (string) $this->n2));
         $el->appendChild($doc->createElement('he', (string) $this->he));
+
+        if ($this->ar !== null) {
+            $el->appendChild($doc->createElement('ar', (string) $this->ar));
+        }
+
+        if ($this->h2 !== null) {
+            $el->appendChild($doc->createElement('h2', (string) $this->h2));
+        }
+
+        if ($this->pricePerLitre !== null) {
+            $el->appendChild($this->pricePerLitre->toXml($doc, 'priceperlitre'));
+        }
+
+        if ($this->maximumPo2 !== null) {
+            $el->appendChild($doc->createElement('maximumpo2', (string) $this->maximumPo2));
+        } elseif ($this->maximumOperationDepth !== null) {
+            $el->appendChild($doc->createElement('maximumoperationdepth', (string) $this->maximumOperationDepth));
+        }
+
+        if ($this->equivalentAirDepth !== null) {
+            $el->appendChild($doc->createElement('equivalentairdepth', (string) $this->equivalentAirDepth));
+        }
 
         return $el;
     }

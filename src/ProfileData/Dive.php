@@ -14,6 +14,9 @@ final class Dive implements XmlSerializable
         /** @var Waypoint[] */
         public readonly array $samples,
         public readonly ?InformationAfterDive $informationAfterDive = null,
+        /** @var TankData[] */
+        public readonly array $tankData = [],
+        public readonly ?ApplicationData $applicationData = null,
     ) {
         if (count($this->samples) < 2) {
             throw new \InvalidArgumentException('A dive must have at least two waypoints.');
@@ -30,7 +33,15 @@ final class Dive implements XmlSerializable
         $el = $doc->createElement('dive');
         $el->setAttribute('id', $this->id);
 
+        if ($this->applicationData !== null) {
+            $el->appendChild($this->applicationData->toXml($doc));
+        }
+
         $el->appendChild($this->informationBeforeDive->toXml($doc));
+
+        foreach ($this->tankData as $tankData) {
+            $el->appendChild($tankData->toXml($doc));
+        }
 
         $samplesEl = $doc->createElement('samples');
         foreach ($this->samples as $waypoint) {

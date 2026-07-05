@@ -13,6 +13,8 @@ final class Manufacturer implements XmlSerializable
     public function __construct(
         public readonly string $id,
         public readonly string $name,
+        /** @var string[] */
+        public readonly array $aliasNames = [],
         public readonly ?Address $address = null,
         public readonly ?Contact $contact = null,
     ) {}
@@ -23,6 +25,10 @@ final class Manufacturer implements XmlSerializable
         $el->setAttribute('id', $this->id);
 
         $el->appendChild($doc->createElement('name', $this->name));
+
+        foreach ($this->aliasNames as $aliasName) {
+            $el->appendChild($doc->createElement('aliasname', $aliasName));
+        }
 
         if ($this->address !== null) {
             $el->appendChild($this->address->toXml($doc));

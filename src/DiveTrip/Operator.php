@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Kreitje\UddfGenerator\DiveTrip;
+
+use Kreitje\UddfGenerator\Common\Address;
+use Kreitje\UddfGenerator\Common\Contact;
+use Kreitje\UddfGenerator\Common\Notes;
+use Kreitje\UddfGenerator\Common\Rating;
+use Kreitje\UddfGenerator\XmlSerializable;
+
+final class Operator implements XmlSerializable
+{
+    public function __construct(
+        public readonly string $name,
+        /** @var string[] */
+        public readonly array $aliasNames = [],
+        public readonly ?Address $address = null,
+        public readonly ?Contact $contact = null,
+        /** @var Rating[] */
+        public readonly array $ratings = [],
+        public readonly ?Notes $notes = null,
+    ) {}
+
+    public function toXml(\DOMDocument $doc): \DOMElement
+    {
+        $el = $doc->createElement('operator');
+
+        $el->appendChild($doc->createElement('name', $this->name));
+
+        foreach ($this->aliasNames as $aliasName) {
+            $el->appendChild($doc->createElement('aliasname', $aliasName));
+        }
+
+        if ($this->address !== null) {
+            $el->appendChild($this->address->toXml($doc));
+        }
+
+        if ($this->contact !== null) {
+            $el->appendChild($this->contact->toXml($doc));
+        }
+
+        foreach ($this->ratings as $rating) {
+            $el->appendChild($rating->toXml($doc));
+        }
+
+        if ($this->notes !== null) {
+            $el->appendChild($this->notes->toXml($doc));
+        }
+
+        return $el;
+    }
+}

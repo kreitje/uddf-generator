@@ -113,7 +113,7 @@ final class UddfParserRealWorldTest extends TestCase
         $this->assertSame(1.9622, $first->depth);
         $this->assertSame(30.0, $first->diveTime);
         $this->assertSame(296.4833, $first->temperature);
-        $this->assertNull($first->tankPressure);
+        $this->assertSame([], $first->tankPressures);
         $this->assertNull($first->switchMixRef);
 
         $last = $waypoints[count($waypoints) - 1];

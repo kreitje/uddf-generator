@@ -18,11 +18,14 @@ use Kreitje\UddfGenerator\Diver\PersonalData;
 use Kreitje\UddfGenerator\Diver\Tank;
 use Kreitje\UddfGenerator\DiveSite\DiveSite;
 use Kreitje\UddfGenerator\DiveSite\Geography;
+use Kreitje\UddfGenerator\Enum\Sex;
 use Kreitje\UddfGenerator\ParseException;
 use Kreitje\UddfGenerator\ProfileData\Dive;
 use Kreitje\UddfGenerator\ProfileData\InformationBeforeDive;
 use Kreitje\UddfGenerator\ProfileData\ProfileData;
 use Kreitje\UddfGenerator\ProfileData\RepetitionGroup;
+use Kreitje\UddfGenerator\ProfileData\TankData;
+use Kreitje\UddfGenerator\ProfileData\TankPressureReading;
 use Kreitje\UddfGenerator\ProfileData\Waypoint;
 use Kreitje\UddfGenerator\UddfGenerator;
 use Kreitje\UddfGenerator\UddfParser;
@@ -58,7 +61,7 @@ final class UddfParserTest extends TestCase
                         firstName: 'Jane',
                         lastName: 'Doe',
                         birthdate: new \DateTimeImmutable('1990-05-15'),
-                        sex: 'female',
+                        sex: Sex::Female,
                     ),
                     equipment: new Equipment(tanks: [
                         new Tank(id: 'tank_a', name: 'Alu80', volume: 11.1),
@@ -96,9 +99,18 @@ final class UddfParserTest extends TestCase
                             ),
                             samples: [
                                 new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),
-                                new Waypoint(depth: 25.0, diveTime: 180, temperature: 300.15, tankPressure: 190.0),
-                                new Waypoint(depth: 25.0, diveTime: 1500, temperature: 298.15, tankPressure: 70.0),
-                                new Waypoint(depth: 0.0, diveTime: 1800, tankPressure: 50.0),
+                                new Waypoint(depth: 25.0, diveTime: 180, temperature: 300.15, tankPressures: [new TankPressureReading(value: 190.0)]),
+                                new Waypoint(depth: 25.0, diveTime: 1500, temperature: 298.15, tankPressures: [new TankPressureReading(value: 70.0)]),
+                                new Waypoint(depth: 0.0, diveTime: 1800, tankPressures: [new TankPressureReading(value: 50.0)]),
+                            ],
+                            tankData: [
+                                new TankData(
+                                    tankRef: 'tank_a',
+                                    mixRef: 'air',
+                                    tankVolume: 11.1,
+                                    tankPressureBegin: 200.0,
+                                    tankPressureEnd: 50.0,
+                                ),
                             ],
                         ),
                     ],
@@ -141,7 +153,7 @@ final class UddfParserTest extends TestCase
         $this->assertSame('Jane', $owner->personalData->firstName);
         $this->assertSame('Doe', $owner->personalData->lastName);
         $this->assertSame('1990-05-15', $owner->personalData->birthdate?->format('Y-m-d'));
-        $this->assertSame('female', $owner->personalData->sex);
+        $this->assertSame(Sex::Female, $owner->personalData->sex);
     }
 
     public function testRoundtripPreservesEquipment(): void
@@ -234,11 +246,25 @@ final class UddfParserTest extends TestCase
         $this->assertSame(25.0, $waypoints[1]->depth);
         $this->assertSame(180.0, $waypoints[1]->diveTime);
         $this->assertSame(300.15, $waypoints[1]->temperature);
-        $this->assertSame(190.0, $waypoints[1]->tankPressure);
+        $this->assertSame(190.0, $waypoints[1]->tankPressures[0]->value);
 
         $this->assertSame(0.0, $waypoints[3]->depth);
         $this->assertSame(1800.0, $waypoints[3]->diveTime);
         $this->assertNull($waypoints[3]->switchMixRef);
+    }
+
+    public function testRoundtripPreservesTankData(): void
+    {
+        $parsed = $this->parser->parse($this->buildFullUddf()->generate());
+
+        $tankData = $parsed->profileData?->repetitionGroups[0]->dives[0]->tankData ?? [];
+        $this->assertCount(1, $tankData);
+
+        $this->assertSame('tank_a', $tankData[0]->tankRef);
+        $this->assertSame('air', $tankData[0]->mixRef);
+        $this->assertSame(11.1, $tankData[0]->tankVolume);
+        $this->assertSame(200.0, $tankData[0]->tankPressureBegin);
+        $this->assertSame(50.0, $tankData[0]->tankPressureEnd);
     }
 
     public function testRoundtripPreservesInformationAfterDive(): void

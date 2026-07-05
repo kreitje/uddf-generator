@@ -21,9 +21,9 @@ final class UddfParserSubsurfaceTest extends TestCase
      * cases the Maui fixture doesn't: empty-but-present required elements
      * (<firstname/>), self-closing optional numeric elements
      * (<latitude/>), unmodelled sibling sections (<mediadata/>, <buddy>,
-     * <divebase>, <tankdata>, <rating>, <divetrip/>), and multiple <link>
-     * elements inside <informationbeforedive> that point at different
-     * things (a buddy and a dive site).
+     * <divebase>, <rating>, <divetrip/>), and multiple <link> elements
+     * inside <informationbeforedive> that point at different things (a
+     * buddy and a dive site).
      */
     private function fixtureXml(): string
     {
@@ -161,9 +161,27 @@ final class UddfParserSubsurfaceTest extends TestCase
     }
 
     /**
-     * <tankdata> is a sibling of <samples> inside <dive> and is not
-     * modelled by this library; it must not interfere with waypoint
-     * parsing.
+     * <tankdata> is a sibling of <samples> inside <dive>. Its only <link>
+     * points at the gas mix (there is no tank in <equipment> to match), so
+     * it must resolve as mixRef and leave tankRef null.
+     */
+    public function testTankData(): void
+    {
+        $uddf = $this->parser->parse($this->fixtureXml());
+
+        $tankData = $uddf->profileData?->repetitionGroups[0]->dives[0]->tankData ?? [];
+        $this->assertCount(1, $tankData);
+
+        $this->assertNull($tankData[0]->tankRef);
+        $this->assertSame('mix(21/0)', $tankData[0]->mixRef);
+        $this->assertSame(0.011094, $tankData[0]->tankVolume);
+        $this->assertSame(20684300.0, $tankData[0]->tankPressureBegin);
+        $this->assertSame(3447400.0, $tankData[0]->tankPressureEnd);
+    }
+
+    /**
+     * <tankdata> is a sibling of <samples> inside <dive> and must not
+     * interfere with waypoint parsing.
      */
     public function testWaypoints(): void
     {
@@ -185,7 +203,7 @@ final class UddfParserSubsurfaceTest extends TestCase
             $this->assertSame($depth, $waypoints[$i]->depth, "waypoint {$i} depth");
             $this->assertSame($diveTime, $waypoints[$i]->diveTime, "waypoint {$i} diveTime");
             $this->assertNull($waypoints[$i]->temperature, "waypoint {$i} temperature");
-            $this->assertNull($waypoints[$i]->tankPressure, "waypoint {$i} tankPressure");
+            $this->assertSame([], $waypoints[$i]->tankPressures, "waypoint {$i} tankPressures");
             $this->assertNull($waypoints[$i]->switchMixRef, "waypoint {$i} switchMixRef");
         }
     }

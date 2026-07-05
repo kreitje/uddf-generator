@@ -22,6 +22,7 @@ use Kreitje\UddfGenerator\ProfileData\InformationAfterDive;
 use Kreitje\UddfGenerator\ProfileData\InformationBeforeDive;
 use Kreitje\UddfGenerator\ProfileData\ProfileData;
 use Kreitje\UddfGenerator\ProfileData\RepetitionGroup;
+use Kreitje\UddfGenerator\ProfileData\TankPressureReading;
 use Kreitje\UddfGenerator\ProfileData\Waypoint;
 use Kreitje\UddfGenerator\UddfGenerator;
 use PHPUnit\Framework\TestCase;
@@ -79,11 +80,11 @@ final class UddfGeneratorTest extends TestCase
                             ),
                             samples: [
                                 new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),
-                                new Waypoint(depth: 10.0, diveTime: 120, temperature: 298.15, tankPressure: 180.0),
-                                new Waypoint(depth: 18.0, diveTime: 300, temperature: 296.15, tankPressure: 160.0),
-                                new Waypoint(depth: 18.0, diveTime: 1500, temperature: 296.15, tankPressure: 80.0),
-                                new Waypoint(depth: 5.0, diveTime: 1800, temperature: 297.15, tankPressure: 60.0),
-                                new Waypoint(depth: 0.0, diveTime: 2100, tankPressure: 50.0),
+                                new Waypoint(depth: 10.0, diveTime: 120, temperature: 298.15, tankPressures: [new TankPressureReading(value: 180.0)]),
+                                new Waypoint(depth: 18.0, diveTime: 300, temperature: 296.15, tankPressures: [new TankPressureReading(value: 160.0)]),
+                                new Waypoint(depth: 18.0, diveTime: 1500, temperature: 296.15, tankPressures: [new TankPressureReading(value: 80.0)]),
+                                new Waypoint(depth: 5.0, diveTime: 1800, temperature: 297.15, tankPressures: [new TankPressureReading(value: 60.0)]),
+                                new Waypoint(depth: 0.0, diveTime: 2100, tankPressures: [new TankPressureReading(value: 50.0)]),
                             ],
                         ),
                     ],

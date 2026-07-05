@@ -14,6 +14,8 @@ final class Geography implements XmlSerializable
         public readonly ?Address $address = null,
         public readonly ?float $latitude = null,
         public readonly ?float $longitude = null,
+        public readonly ?float $altitude = null,
+        public readonly ?float $timezone = null,
     ) {}
 
     public function toXml(\DOMDocument $doc): \DOMElement
@@ -32,6 +34,14 @@ final class Geography implements XmlSerializable
 
         if ($this->longitude !== null) {
             $el->appendChild($doc->createElement('longitude', (string) $this->longitude));
+        }
+
+        if ($this->altitude !== null) {
+            $el->appendChild($doc->createElement('altitude', (string) $this->altitude));
+        }
+
+        if ($this->timezone !== null) {
+            $el->appendChild($doc->createElement('timezone', (string) $this->timezone));
         }
 
         return $el;
