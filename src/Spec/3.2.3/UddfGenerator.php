@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kreitje\UddfGenerator\Spec\V323;
 
+use Kreitje\UddfGenerator\Spec\IUDDFGeneratorVersion;
 use Kreitje\UddfGenerator\XmlSerializable;
 use Kreitje\UddfGenerator\Spec\V323\Business\Business;
 use Kreitje\UddfGenerator\Spec\V323\DecoModel\DecoModel;
@@ -18,7 +19,7 @@ use Kreitje\UddfGenerator\Spec\V323\Media\MediaData;
 use Kreitje\UddfGenerator\Spec\V323\ProfileData\ProfileData;
 use Kreitje\UddfGenerator\Spec\V323\TableGeneration\TableGeneration;
 
-final class UddfGenerator implements XmlSerializable
+final class UddfGenerator implements XmlSerializable, IUDDFGeneratorVersion
 {
     public const VERSION = '3.2.3';
 
@@ -115,5 +116,10 @@ final class UddfGenerator implements XmlSerializable
         }
 
         return $root;
+    }
+
+    public function getVersion(): string
+    {
+        return self::VERSION;
     }
 }

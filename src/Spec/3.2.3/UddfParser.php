@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Kreitje\UddfGenerator\Spec\V323;
 
 use Kreitje\UddfGenerator\ParseException;
+use Kreitje\UddfGenerator\Spec\IUDDFGeneratorVersion;
 use Kreitje\UddfGenerator\Spec\V323\Business\Business;
 use Kreitje\UddfGenerator\Spec\V323\Common\Price;
 use Kreitje\UddfGenerator\Spec\V323\Common\Shop;
@@ -30,7 +31,7 @@ use Kreitje\UddfGenerator\Spec\V323\Parsing\DiverParser;
 use Kreitje\UddfGenerator\Spec\V323\Parsing\ProfileDataParser;
 use Kreitje\UddfGenerator\Spec\V323\Parsing\TableGenerationParser;
 
-final class UddfParser
+final class UddfParser implements IUDDFGeneratorVersion
 {
     use DomHelpers;
 
@@ -240,5 +241,10 @@ final class UddfParser
             ),
             $this->children($el, 'shop'),
         ));
+    }
+
+    public function getVersion(): string
+    {
+        return (new UddfGenerator())->getVersion();
     }
 }
