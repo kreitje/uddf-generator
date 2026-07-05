@@ -2,7 +2,9 @@
 
 A PHP library for generating and parsing [UDDF](https://www.streit.cc/resources/UDDF/v3.2.3/en/index.html) (Universal Dive Data Format) XML files. The entire UDDF document is modelled as a tree of typed PHP objects — build the tree, call `generate()`, get valid UDDF 3.2.3 XML.
 
-This is based on the xsd file located here: [https://streit.cc/dive/page2.html](https://streit.cc/dive/page2.html)
+This is based on the xsd file located here: [https://streit.cc/dive/page2.html](https://streit.cc/dive/page2.html).
+
+This library is going through rapid iteration and I suggest you not use it yet.
 
 ## Requirements
 
