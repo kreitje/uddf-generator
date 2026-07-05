@@ -17,7 +17,8 @@
     },
     "autoload": {
         "psr-4": {
-            "Kreitje\\UddfGenerator\\": "src/"
+            "Kreitje\\UddfGenerator\\": "src/",
+            "Kreitje\\UddfGenerator\\Spec\\V323\\": "src/Spec/3.2.3/"
         }
     },
     "autoload-dev": {
