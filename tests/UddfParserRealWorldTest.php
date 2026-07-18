@@ -98,7 +98,7 @@ final class UddfParserRealWorldTest extends TestCase
         $this->assertNotNull($before);
         $this->assertSame('2020-11-07T14:00:00', $before->datetime->format('Y-m-d\TH:i:s'));
         $this->assertNull($before->diveNumber);
-        $this->assertNull($before->diveSiteRef);
+        $this->assertSame([], $before->linkRefs);
     }
 
     public function testWaypointCountAndSamples(): void

@@ -76,7 +76,7 @@ final class UddfGeneratorTest extends TestCase
                             informationBeforeDive: new InformationBeforeDive(
                                 datetime: new \DateTimeImmutable('2024-01-15T10:30:00'),
                                 diveNumber: 42,
-                                diveSiteRef: 'site_001',
+                                linkRefs: ['site_001'],
                             ),
                             samples: [
                                 new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),

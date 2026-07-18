@@ -101,7 +101,7 @@ use Kreitje\UddfGenerator\DiveSite\{DiveSite, Geography};
 
 $sites = [
     new DiveSite(
-        id: 'site_gbr',                    // referenced by dives via diveSiteRef
+        id: 'site_gbr',                    // referenced by dives via linkRefs
         name: 'Great Barrier Reef',
         geography: new Geography(
             location: 'Queensland, Australia',
@@ -154,7 +154,7 @@ $profileData = new ProfileData([
             informationBeforeDive: new InformationBeforeDive(
                 datetime: new DateTimeImmutable('2024-06-15T09:00:00'),
                 diveNumber: 42,
-                diveSiteRef: 'site_gbr', // references a DiveSite id
+                linkRefs: ['site_gbr'], // references a DiveSite id (may hold multiple refs, e.g. buddy + dive site)
             ),
             samples: [
                 // depth in metres · diveTime in seconds · temperature in Kelvin · tankPressure in bar

@@ -145,10 +145,10 @@ final class UddfParserSubsurfaceTest extends TestCase
 
     /**
      * <informationbeforedive> has two <link> elements: the first refs the
-     * buddy, the second refs the dive site. diveSiteRef must resolve to the
-     * dive site id ('52ad10b4'), not just the first link encountered.
+     * buddy, the second refs the dive site. Both must be preserved, in
+     * document order, since the schema itself does not distinguish them.
      */
-    public function testInformationBeforeDiveResolvesCorrectLinkAmongMultiple(): void
+    public function testInformationBeforeDivePreservesAllLinks(): void
     {
         $uddf = $this->parser->parse($this->fixtureXml());
 
@@ -157,7 +157,7 @@ final class UddfParserSubsurfaceTest extends TestCase
         $this->assertNotNull($before);
         $this->assertSame('2026-07-03T14:26:33', $before->datetime->format('Y-m-d\TH:i:s'));
         $this->assertSame(1, $before->diveNumber);
-        $this->assertSame('52ad10b4', $before->diveSiteRef);
+        $this->assertSame(['idp105553145083007', '52ad10b4'], $before->linkRefs);
     }
 
     /**

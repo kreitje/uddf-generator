@@ -173,7 +173,7 @@ final class UddfFullSpecTest extends TestCase
                         informationBeforeDive: new InformationBeforeDive(
                             datetime: new \DateTimeImmutable('2024-06-01T09:00:00'),
                             diveNumber: 99,
-                            diveSiteRef: 'site_gbr',
+                            linkRefs: ['site_gbr'],
                         ),
                         samples: [
                             new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),
@@ -295,7 +295,7 @@ final class UddfFullSpecTest extends TestCase
     {
         $dive = (new UddfParser())->parse($this->buildFullUddf()->generate())->profileData->repetitionGroups[0]->dives[0];
 
-        $this->assertSame('site_gbr', $dive->informationBeforeDive->diveSiteRef);
+        $this->assertSame(['site_gbr'], $dive->informationBeforeDive->linkRefs);
         $this->assertSame(190.0, $dive->samples[1]->tankPressures[0]->value);
         $this->assertSame('tank_a', $dive->samples[1]->tankPressures[0]->ref);
         $this->assertSame(AlarmType::Deco, $dive->samples[1]->alarms[0]->type);

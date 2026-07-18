@@ -16,7 +16,8 @@ final class InformationBeforeDive implements XmlSerializable
     public function __construct(
         public readonly \DateTimeImmutable $datetime,
         public readonly ?int $diveNumber = null,
-        public readonly ?string $diveSiteRef = null,
+        /** @var string[] */
+        public readonly array $linkRefs = [],
         public readonly ?int $diveNumberOfDay = null,
         public readonly ?int $internalDiveNumber = null,
         public readonly ?float $airTemperature = null,
@@ -44,9 +45,9 @@ final class InformationBeforeDive implements XmlSerializable
     {
         $el = $doc->createElement('informationbeforedive');
 
-        if ($this->diveSiteRef !== null) {
+        foreach ($this->linkRefs as $linkRef) {
             $link = $doc->createElement('link');
-            $link->setAttribute('ref', $this->diveSiteRef);
+            $link->setAttribute('ref', $linkRef);
             $el->appendChild($link);
         }
 

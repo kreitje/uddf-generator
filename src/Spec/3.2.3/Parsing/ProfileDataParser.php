@@ -37,13 +37,11 @@ final class ProfileDataParser
     use DomHelpers;
 
     /**
-     * @param string[] $knownDiveSiteIds
      * @param string[] $knownTankIds
      * @param string[] $knownMixIds
      */
     public function parse(
         \DOMElement $root,
-        array $knownDiveSiteIds,
         array $knownTankIds,
         array $knownMixIds,
     ): ?ProfileData {
@@ -59,7 +57,7 @@ final class ProfileDataParser
             $dives = [];
 
             foreach ($this->children($groupEl, 'dive') as $diveEl) {
-                $dives[] = $this->parseDive($diveEl, $knownDiveSiteIds, $knownTankIds, $knownMixIds);
+                $dives[] = $this->parseDive($diveEl, $knownTankIds, $knownMixIds);
             }
 
             if ($dives !== []) {
@@ -75,13 +73,11 @@ final class ProfileDataParser
     }
 
     /**
-     * @param string[] $knownDiveSiteIds
      * @param string[] $knownTankIds
      * @param string[] $knownMixIds
      */
     private function parseDive(
         \DOMElement $diveEl,
-        array $knownDiveSiteIds,
         array $knownTankIds,
         array $knownMixIds,
     ): Dive {
@@ -101,7 +97,7 @@ final class ProfileDataParser
 
         return new Dive(
             id: $id,
-            informationBeforeDive: $this->parseInformationBeforeDive($beforeEl, $knownDiveSiteIds),
+            informationBeforeDive: $this->parseInformationBeforeDive($beforeEl),
             samples: $waypoints,
             informationAfterDive: $afterEl !== null ? $this->parseInformationAfterDive($afterEl) : null,
             tankData: $this->parseTankData($diveEl, $knownTankIds, $knownMixIds),
@@ -109,8 +105,7 @@ final class ProfileDataParser
         );
     }
 
-    /** @param string[] $knownDiveSiteIds */
-    private function parseInformationBeforeDive(\DOMElement $beforeEl, array $knownDiveSiteIds): InformationBeforeDive
+    private function parseInformationBeforeDive(\DOMElement $beforeEl): InformationBeforeDive
     {
         $equipmentUsedEl = $this->child($beforeEl, 'equipmentused');
         $tripMembershipEl = $this->child($beforeEl, 'tripmembership');
@@ -124,7 +119,10 @@ final class ProfileDataParser
         return new InformationBeforeDive(
             datetime: new \DateTimeImmutable($this->require($beforeEl, 'datetime')),
             diveNumber: $this->int($beforeEl, 'divenumber'),
-            diveSiteRef: $this->findDiveSiteLinkRef($beforeEl, $knownDiveSiteIds),
+            linkRefs: array_map(
+                static fn (\DOMElement $link): string => $link->getAttribute('ref'),
+                $this->children($beforeEl, 'link'),
+            ),
             diveNumberOfDay: $this->int($beforeEl, 'divenumberofday'),
             internalDiveNumber: $this->int($beforeEl, 'internaldivenumber'),
             airTemperature: $this->float($beforeEl, 'airtemperature'),
@@ -248,33 +246,5 @@ final class ProfileDataParser
         }
 
         return $result;
-    }
-
-    /**
-     * <informationbeforedive> may contain several <link> elements pointing at
-     * unrelated things (buddy, trip membership, equipment used, the dive
-     * site, ...) — the schema does not distinguish between them structurally.
-     * Prefer a link whose ref matches a known dive site id; if none match and
-     * there is exactly one link, assume it is the dive site reference (this
-     * is always true for documents this library itself generates).
-     *
-     * @param string[] $knownDiveSiteIds
-     */
-    private function findDiveSiteLinkRef(\DOMElement $beforeEl, array $knownDiveSiteIds): ?string
-    {
-        $links = $this->children($beforeEl, 'link');
-
-        foreach ($links as $link) {
-            $ref = $link->getAttribute('ref');
-            if (in_array($ref, $knownDiveSiteIds, true)) {
-                return $ref;
-            }
-        }
-
-        if (count($links) === 1) {
-            return $links[0]->getAttribute('ref') ?: null;
-        }
-
-        return null;
     }
 }

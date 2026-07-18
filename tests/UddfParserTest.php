@@ -95,7 +95,7 @@ final class UddfParserTest extends TestCase
                             informationBeforeDive: new InformationBeforeDive(
                                 datetime: new \DateTimeImmutable('2024-06-01T09:00:00'),
                                 diveNumber: 99,
-                                diveSiteRef: 'site_gbr',
+                                linkRefs: ['site_gbr'],
                             ),
                             samples: [
                                 new Waypoint(depth: 0.0, diveTime: 0, switchMixRef: 'air'),
@@ -228,7 +228,7 @@ final class UddfParserTest extends TestCase
         $this->assertNotNull($before);
         $this->assertSame('2024-06-01T09:00:00', $before->datetime->format('Y-m-d\TH:i:s'));
         $this->assertSame(99, $before->diveNumber);
-        $this->assertSame('site_gbr', $before->diveSiteRef);
+        $this->assertSame(['site_gbr'], $before->linkRefs);
     }
 
     public function testRoundtripPreservesWaypoints(): void

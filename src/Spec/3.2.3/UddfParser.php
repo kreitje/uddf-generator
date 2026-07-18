@@ -12,7 +12,6 @@ use Kreitje\UddfGenerator\Spec\V323\Common\Shop;
 use Kreitje\UddfGenerator\Spec\V323\Diver\Tank;
 use Kreitje\UddfGenerator\Spec\V323\Enum\GeneratorType;
 use Kreitje\UddfGenerator\Spec\V323\Enum\MeteringMethod;
-use Kreitje\UddfGenerator\Spec\V323\DiveSite\DiveSite;
 use Kreitje\UddfGenerator\Spec\V323\Gas\GasDefinitions;
 use Kreitje\UddfGenerator\Spec\V323\Gas\Mix;
 use Kreitje\UddfGenerator\Spec\V323\Generator\Generator;
@@ -74,7 +73,6 @@ final class UddfParser implements IUDDFGeneratorVersion
             decoModel: (new DecoModelParser())->parse($root),
             profileData: (new ProfileDataParser())->parse(
                 $root,
-                array_map(static fn (DiveSite $site): string => $site->id, $diveSites),
                 array_map(static fn (Tank $tank): string => $tank->id, $diver?->owner->equipment?->tanks ?? []),
                 array_map(static fn (Mix $mix): string => $mix->id, $gasDefinitions?->mixes ?? []),
             ),
